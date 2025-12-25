@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+httpx
+pydantic
+pyyaml
+openai
+google-generativeai
+cohere
+huggingface_hub

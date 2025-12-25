@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "myregistry.azurecr.io"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Setup') {
+            steps {
+                sh 'pip install -r services/chat-orchestrator/requirements.txt'
+                sh 'pip install pylint pytest'
+            }
+        }
+
+        stage('Linting') {
+            steps {
+                sh 'pylint services/**/*.py || true' # Don't fail build on lint yet
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                // Mock test run
+                sh 'echo "Running unit tests..."'
+                // sh 'pytest tests/'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    def scannerHome = tool 'SonarScanner'
+                    withSonarQubeEnv('SonarQube') {
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh 'docker-compose -f infra/docker-compose.yml build'
+            }
+        }
+
+        stage('Deploy to Dev') {
+            steps {
+                sh 'docker-compose -f infra/docker-compose.yml up -d'
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

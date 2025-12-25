@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  ingestion-indexer:
+    build:
+      context: .
+      dockerfile: services/ingestion-indexer/Dockerfile
+    env_file:
+      - ../.env
+      - ../.env.example
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data:/app/data
+      - ./config.yaml:/app/config.yaml
+    command: uvicorn services.ingestion-indexer.main:app --host 0.0.0.0 --port 8001
+    restart: always
+
+  chat-orchestrator:
+    build:
+      context: .
+      dockerfile: services/chat-orchestrator/Dockerfile
+    env_file:
+      - ../.env
+      - ../.env.example
+    ports:
+      - "8002:8002"
+    environment:
+      - GROK_KEY=${GROK_KEY}
+      - GEMINI_KEY=${GEMINI_KEY}
+    volumes:
+      - ./data:/app/data
+      - ./config.yaml:/app/config.yaml
+    command: uvicorn services.chat-orchestrator.main:app --host 0.0.0.0 --port 8002
+    depends_on:
+      - ingestion-indexer
+    restart: always
+
+  gateway-api:
+    build:
+      context: .
+      dockerfile: services/gateway-api/Dockerfile
+    env_file:
+      - ../.env
+      - ../.env.example
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    command: uvicorn services.gateway-api.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      - chat-orchestrator
+    restart: always
+
+  voice-orchestrator:
+    build:
+      context: .
+      dockerfile: services/voice-orchestrator/Dockerfile
+    env_file:
+      - ../.env
+      - ../.env.example
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    command: uvicorn services.voice-orchestrator.main:app --host 0.0.0.0 --port 8004
+    restart: always
+
+  email-responder:
+    build:
+      context: .
+      dockerfile: services/email-responder/Dockerfile
+    env_file:
+      - ../.env
+      - ../.env.example
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    command: python services/email-responder/worker.py
+    restart: always

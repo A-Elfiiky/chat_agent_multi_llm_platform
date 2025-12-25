@@ -1,0 +1,31 @@
+[
+  {
+    "id": "flow_main_menu",
+    "type": "menu",
+    "prompt": "Welcome to Copilot Support. For order status, press 1. For returns, press 2. To speak with an AI assistant, press 3.",
+    "options": {
+      "1": "flow_order_status",
+      "2": "flow_returns",
+      "3": "flow_ai_assistant"
+    }
+  },
+  {
+    "id": "flow_order_status",
+    "type": "message",
+    "prompt": "Please visit our website to check your order status. Goodbye.",
+    "next": "hangup"
+  },
+  {
+    "id": "flow_returns",
+    "type": "message",
+    "prompt": "Returns are accepted within 30 days. Please check your email for the return label.",
+    "next": "hangup"
+  },
+  {
+    "id": "flow_ai_assistant",
+    "type": "gather",
+    "prompt": "Please state your question after the beep.",
+    "action_url": "/voice/webhook",
+    "input_type": "speech"
+  }
+]

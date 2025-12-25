@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Control Center Test</title>
+</head>
+<body>
+    <h1>Testing Section Injection</h1>
+    <div id="test-output"></div>
+    
+    <script src="control-center-sections.js"></script>
+    <script>
+        // Test if SECTIONS is defined
+        const output = document.getElementById('test-output');
+        
+        if (typeof SECTIONS !== 'undefined') {
+            output.innerHTML += '<p style="color: green;">✓ SECTIONS object loaded</p>';
+            output.innerHTML += '<p>Sections available: ' + Object.keys(SECTIONS).join(', ') + '</p>';
+            output.innerHTML += '<p>Total sections: ' + Object.keys(SECTIONS).length + '</p>';
+            
+            // Test analytics section
+            if (SECTIONS.analytics) {
+                output.innerHTML += '<p style="color: green;">✓ Analytics section exists</p>';
+                output.innerHTML += '<p>Length: ' + SECTIONS.analytics.length + ' characters</p>';
+            }
+            
+            // Test voice section
+            if (SECTIONS.voice) {
+                output.innerHTML += '<p style="color: green;">✓ Voice section exists</p>';
+            }
+            
+            // Test email section  
+            if (SECTIONS.email) {
+                output.innerHTML += '<p style="color: green;">✓ Email section exists</p>';
+            }
+            
+            // Test integrations section
+            if (SECTIONS.integrations) {
+                output.innerHTML += '<p style="color: green;">✓ Integrations section exists</p>';
+            }
+        } else {
+            output.innerHTML += '<p style="color: red;">✗ SECTIONS object NOT loaded</p>';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+### Test Health
+GET http://localhost:8000/health
+
+### Test Chat (Gateway)
+POST http://localhost:8000/api/v1/chat
+Content-Type: application/json
+
+{
+    "message": "How do I reset my password?"
+}
+
+### Test Chat (Direct Orchestrator)
+POST http://localhost:8002/chat
+Content-Type: application/json
+
+{
+    "message": "shipping costs"
+}
+
+### Test Ingestion Search
+POST http://localhost:8001/search
+Content-Type: application/json
+
+{
+    "query": "return policy",
+    "k": 2
+}
+
+### Test Voice Webhook (Mock)
+POST http://localhost:8004/voice/webhook
+Content-Type: application/json
+
+{
+    "call_sid": "12345",
+    "speech_result": "I need to return a product"
+}

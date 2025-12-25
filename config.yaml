@@ -1,0 +1,64 @@
+# Configuration File
+# Defines providers, timeouts, thresholds, and feature flags.
+
+system:
+  environment: "development" # development, production
+  log_level: "INFO"
+  secret_manager: "env" # env, vault
+
+rag:
+  confidence_threshold: 0.35
+  max_citations: 3
+  retrieval_k: 5
+
+llm:
+  timeout_ms: 5000
+  fallback_order:
+    - "groq"
+    - "gemini"
+    - "openai"
+    - "huggingface"
+    - "local"
+  
+  providers:
+    groq:
+      api_key_env: "GROQ_API_KEY"
+      model: "llama-3.1-8b-instant"
+    gemini:
+      api_key_env: "GEMINI_KEY"
+      model: "gemini-2.5-flash"
+    openai:
+      api_key_env: "OPENAI_API_KEY"
+      model: "gpt-3.5-turbo"
+    huggingface:
+      endpoint_env: "HF_ENDPOINT"
+      token_env: "HF_TOKEN"
+    local:
+      base_url: "http://localhost:8000/v1"
+      model: "llama3"
+
+voice:
+  asr:
+    provider: "local_whisper" # local_whisper, cloud_gemini
+    model_path: "base"
+  tts:
+    provider: "local_coqui" # local_coqui, cloud_polly
+    voice_id: "default"
+
+email:
+  provider: "imap" # imap, graph
+  check_interval_seconds: 60
+
+database:
+  postgres_url_env: "DATABASE_URL"
+  vector_store_path: "./data/vector_store"
+
+security:
+  pii_redaction: true
+  pii_patterns:
+    - "email"
+    - "phone"
+  api_keys:
+    - "secret-client-key-123"
+    - "admin-key-456"
+  admin_token: "local-admin-token"

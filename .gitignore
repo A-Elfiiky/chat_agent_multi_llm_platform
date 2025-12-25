@@ -1,0 +1,14 @@
+.env
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.log
+*.pid
+*.sqlite
+*.db
+.service-pids.json
+.platform-processes.json
+/specstory/
+data/vector_store/
+data/*.db

@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copilot Control Center - Centralized Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-260px);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .sidebar-nav {
+            padding: 10px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-section-title {
+            padding: 10px 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #6b7280;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #4b5563;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--light);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: #eef2ff;
+            border-left-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-item-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-toggle {
+            background: var(--light);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .menu-toggle:hover {
+            background: var(--border);
+        }
+
+        .header-title h2 {
+            font-size: 24px;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .header-title p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge.online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.offline {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.connecting {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .refresh-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .faq-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 2px 4px 2px 0;
+        }
+
+        .faq-tags-empty {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        .faq-pagination {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .faq-pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .faq-page-label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .stat-card.primary::before { background: var(--primary); }
+        .stat-card.success::before { background: var(--success); }
+        .stat-card.warning::before { background: var(--warning); }
+        .stat-card.danger::before { background: var(--danger); }
+        .stat-card.info::before { background: var(--info); }
+
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-change.positive {
+            color: var(--success);
+        }
+
+        .stat-change.negative {
+            color: var(--danger);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--dark);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--light);
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #6b7280;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--dark);
+        }
+
+        tr:hover {
+            background: var(--light);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.inline {
+            flex: 1 1 180px;
+            min-width: 180px;
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-260px);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--success);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.success {
+            background: var(--success);
+        }
+
+        .progress-fill.warning {
+            background: var(--warning);
+        }
+
+        .progress-fill.danger {
+            background: var(--danger);
+        }
+
+        .llm-provider-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+        }
+
+        .llm-provider-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 3px 8px rgba(15, 23, 42, 0.05);
+        }
+
+        .llm-provider-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .llm-provider-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .llm-provider-meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .llm-provider-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .llm-stat-label {
+            text-transform: uppercase;
+            font-size: 11px;
+            color: #9ca3af;
+            letter-spacing: 0.5px;
+        }
+
+        .llm-stat-value {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 15px;
+        }
+
+        .llm-provider-response {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 13px;
+            color: #374151;
+            white-space: pre-line;
+            min-height: 48px;
+        }
+
+        .llm-provider-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .llm-provider-cred {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .llm-provider-cred.ok {
+            color: var(--success);
+        }
+
+        .llm-provider-cred.missing {
+            color: var(--danger);
+        }
+
+        .llm-empty-state {
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            background: #f9fafb;
+            font-size: 14px;
+        }
+
+        .llm-provider-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .pill-button {
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 6px 14px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .pill-button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #eef2ff;
+        }
+
+        .telephony-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .telephony-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-top: 4px;
+            word-break: break-all;
+        }
+
+        .telephony-env-alert {
+            margin-top: 15px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 13px;
+            display: none;
+        }
+
+        .telephony-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+        }
+
+        .telephony-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .telephony-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .telephony-card h4 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .telephony-status-badge {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .telephony-status-badge.success { background: #d1fae5; color: #065f46; }
+        .telephony-status-badge.warning { background: #fef3c7; color: #92400e; }
+        .telephony-status-badge.danger { background: #fee2e2; color: #991b1b; }
+        .telephony-status-badge.info { background: #e0f2fe; color: #075985; }
+
+        .telephony-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .telephony-empty-state {
+            text-align: center;
+            color: #6b7280;
+            padding: 40px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>🤖 Copilot Control</h1>
+            <p>Centralized Admin Dashboard</p>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Overview</div>
+                <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard', event)">
+                    <span class="nav-item-icon">📊</span>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-section="analytics" onclick="showSection('analytics', event)">
+                    <span class="nav-item-icon">📈</span>
+                    <span>Analytics</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Features</div>
+                <div class="nav-item" data-section="translation" onclick="showSection('translation', event)">
+                    <span class="nav-item-icon">🌍</span>
+                    <span>Multi-language</span>
+                </div>
+                <div class="nav-item" data-section="sentiment" onclick="showSection('sentiment', event)">
+                    <span class="nav-item-icon">😊</span>
+                    <span>Sentiment & Escalation</span>
+                </div>
+                <div class="nav-item" data-section="cache" onclick="showSection('cache', event)">
+                    <span class="nav-item-icon">⚡</span>
+                    <span>Response Caching</span>
+                </div>
+                <div class="nav-item" data-section="ratelimit" onclick="showSection('ratelimit', event)">
+                    <span class="nav-item-icon">🛡️</span>
+                    <span>Rate Limiting</span>
+                </div>
+                <div class="nav-item" data-section="llmTester" onclick="showSection('llmTester', event)">
+                    <span class="nav-item-icon">🧪</span>
+                    <span>LLM API Tester</span>
+                </div>
+                <div class="nav-item" data-section="telephonyTester" onclick="showSection('telephonyTester', event)">
+                    <span class="nav-item-icon">☎️</span>
+                    <span>Telephony Tester</span>
+                </div>
+                <div class="nav-item" data-section="knowledge" onclick="showSection('knowledge', event)">
+                    <span class="nav-item-icon">🎓</span>
+                    <span>Knowledge Base</span>
+                </div>
+                <div class="nav-item" data-section="faqs" onclick="showSection('faqs', event)">
+                    <span class="nav-item-icon">❓</span>
+                    <span>FAQ Manager</span>
+                </div>
+                <div class="nav-item" data-section="conversations" onclick="showSection('conversations', event)">
+                    <span class="nav-item-icon">💬</span>
+                    <span>Conversations</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Channels</div>
+                <div class="nav-item" data-section="voice" onclick="showSection('voice', event)">
+                    <span class="nav-item-icon">📞</span>
+                    <span>Voice & Calling</span>
+                </div>
+                <div class="nav-item" data-section="email" onclick="showSection('email', event)">
+                    <span class="nav-item-icon">📧</span>
+                    <span>Email Support</span>
+                </div>
+                <div class="nav-item" data-section="integrations" onclick="showSection('integrations', event)">
+                    <span class="nav-item-icon">🔗</span>
+                    <span>Integrations</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Management</div>
+                <div class="nav-item" data-section="costs" onclick="showSection('costs', event)">
+                    <span class="nav-item-icon">💰</span>
+                    <span>Cost Analysis</span>
+                </div>
+                <div class="nav-item" data-section="settings" onclick="showSection('settings', event)">
+                    <span class="nav-item-icon">⚙️</span>
+                    <span>Settings</span>
+                </div>
+                <div class="nav-item" data-section="logs" onclick="showSection('logs', event)">
+                    <span class="nav-item-icon">📝</span>
+                    <span>System Logs</span>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <span>☰</span>
+                </button>
+                <div class="header-title">
+                    <h2 id="pageTitle">Dashboard</h2>
+                    <p id="pageSubtitle">Real-time platform overview</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge connecting" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+                <button class="refresh-btn" onclick="refreshAllData()">
+                    <span>🔄</span>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section class="content-section active" id="section-dashboard">
+            <!-- Stats Overview -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-label">Total Interactions</div>
+                    <div class="stat-value" id="stat-interactions">0</div>
+                    <div class="stat-change positive">
+                        <span>↑ 12.5%</span>
+                        <span>vs last week</span>
+                    </div>
+                </div>
+
+                <div class="stat-card success">
+                    <div class="stat-label">Cache Hit Rate</div>
+                    <div class="stat-value" id="stat-cache">0%</div>
+                    <div class="stat-change positive">
+                        <span>↑ 8.3%</span>
+                        <span>optimization</span>
+                    </div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-label">Avg Response Time</div>
+                    <div class="stat-value" id="stat-response">0ms</div>
+                    <div class="stat-change positive">
+                        <span>↓ 15.2%</span>
+                        <span>faster</span>
+                    </div>
+                </div>
+
+                <div class="stat-card danger">
+                    <div class="stat-label">Escalation Rate</div>
+                    <div class="stat-value" id="stat-escalation">0%</div>
+                    <div class="stat-change negative">
+                        <span>↑ 2.1%</span>
+                        <span>needs attention</span>
+                    </div>
+                </div>
+
+                <div class="stat-card info">
+                    <div class="stat-label">Active Languages</div>
+                    <div class="stat-value" id="stat-languages">0</div>
+                    <div class="stat-change positive">
+                        <span>+3</span>
+                        <span>this week</span>
+                    </div>
+                </div>
+
+                <div class="stat-card success">
+                    <div class="stat-label">Cost Savings</div>
+                    <div class="stat-value" id="stat-savings">$0</div>
+                    <div class="stat-change positive">
+                        <span>↑ 24.8%</span>
+                        <span>from caching</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📊 Traffic Overview</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">😊 Sentiment Distribution</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Popular Questions -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🔥 Popular Questions (Last 7 Days)</div>
+                    <button class="btn btn-outline btn-sm" onclick="loadPopularQuestions()">Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table id="popularQuestionsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Question</th>
+                                <th>Count</th>
+                                <th>Avg Confidence</th>
+                                <th>Avg Response Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="popularQuestionsBody">
+                            <tr>
+                                <td colspan="5" class="loading">
+                                    <div class="loading-spinner"></div>
+                                    <p>Loading popular questions...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">⚡ Quick Actions</div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <button class="btn btn-primary" onclick="testChat()">
+                        💬 Test Chat
+                    </button>
+                    <button class="btn btn-success" onclick="exportAnalytics()">
+                        📥 Export Analytics
+                    </button>
+                    <button class="btn btn-outline" onclick="clearCache()">
+                        🗑️ Clear Cache
+                    </button>
+                    <button class="btn btn-outline" onclick="refreshKnowledgeBase()">
+                        📚 Refresh KB
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section class="content-section" id="section-analytics"></section>
+
+        <!-- Translation Section -->
+        <section class="content-section" id="section-translation"></section>
+
+        <!-- Sentiment Section -->
+        <section class="content-section" id="section-sentiment"></section>
+
+        <!-- Cache Section -->
+        <section class="content-section" id="section-cache"></section>
+
+        <!-- Rate Limiting Section -->
+        <section class="content-section" id="section-ratelimit"></section>
+
+    <!-- LLM Tester Section -->
+    <section class="content-section" id="section-llmTester"></section>
+
+    <!-- Telephony Tester Section -->
+    <section class="content-section" id="section-telephonyTester"></section>
+
+        <!-- Knowledge Base Section -->
+        <section class="content-section" id="section-knowledge"></section>
+
+    <!-- FAQ Manager Section -->
+    <section class="content-section" id="section-faqs"></section>
+
+        <!-- Conversations Section -->
+        <section class="content-section" id="section-conversations"></section>
+
+        <!-- Voice & Calling Section -->
+        <section class="content-section" id="section-voice"></section>
+
+        <!-- Email Support Section -->
+        <section class="content-section" id="section-email"></section>
+
+        <!-- Integrations Section -->
+        <section class="content-section" id="section-integrations"></section>
+
+        <!-- Cost Analysis Section -->
+        <section class="content-section" id="section-costs"></section>
+
+        <!-- Settings Section -->
+        <section class="content-section" id="section-settings"></section>
+
+        <!-- System Logs Section -->
+        <section class="content-section" id="section-logs"></section>
+    </main>
+
+    <!-- Test Chat Modal -->
+    <div class="modal" id="testChatModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">💬 Test Chat Interface</h3>
+                <button class="modal-close" onclick="closeModal('testChatModal')">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Language</label>
+                <select class="form-select" id="testLanguage">
+                    <option value="">Auto-detect</option>
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="zh">Chinese</option>
+                    <option value="ar">Arabic</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Your Message</label>
+                <textarea class="form-textarea" id="testMessage" placeholder="Type your question here...">How can I track my order?</textarea>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary" style="width: 100%;" onclick="sendTestMessage()">
+                    Send Message
+                </button>
+            </div>
+            <div id="testChatResponse" style="display: none; margin-top: 20px;">
+                <div class="alert alert-success">
+                    <strong>Response:</strong>
+                    <p id="testResponseText" style="margin-top: 10px;"></p>
+                </div>
+                <div style="font-size: 12px; color: #6b7280; margin-top: 10px;">
+                    <strong>Details:</strong><br>
+                    Provider: <span id="testProvider"></span><br>
+                    Response Time: <span id="testResponseTime"></span>ms<br>
+                    Sentiment: <span id="testSentiment"></span><br>
+                    Language Detected: <span id="testDetectedLang"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ Create/Edit Modal -->
+    <div class="modal" id="faqModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="faqModalTitle">➕ Add FAQ</h3>
+                <button class="modal-close" onclick="closeModal('faqModal')">×</button>
+            </div>
+            <form id="faqForm" onsubmit="submitFaqForm(event)">
+                <div class="form-group">
+                    <label class="form-label" for="faqQuestion">Question</label>
+                    <textarea class="form-textarea" id="faqQuestion" placeholder="Enter the customer question" minlength="5" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="faqAnswer">Answer</label>
+                    <textarea class="form-textarea" id="faqAnswer" placeholder="Document the best possible response" minlength="5" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="faqCategory">Category</label>
+                    <input type="text" class="form-input" id="faqCategory" placeholder="e.g., Orders, Billing" minlength="2" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="faqTags">Tags</label>
+                    <input type="text" class="form-input" id="faqTags" placeholder="Comma separated, e.g., payment,refund">
+                    <small style="color:#6b7280;">Use tags to boost routing and analytics</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="faqStatus">Status</label>
+                    <select class="form-select" id="faqStatus" required>
+                        <option value="active">Active</option>
+                        <option value="draft">Draft</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+                <input type="hidden" id="faqLastUpdated">
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('faqModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="faqSubmitBtn">Create FAQ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Load Section Templates and Functions -->
+    <script src="platform-config.js"></script>
+    <script src="control-center-sections.js"></script>
+    <script src="control-center-functions.js"></script>
+
+    <script>
+        // API_BASE is defined in control-center-functions.js or platform-config.js
+        // const API_BASE = 'http://localhost:8000'; 
+        let charts = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for required globals
+            if (typeof API_BASE === 'undefined') {
+                console.error('API_BASE is not defined. control-center-functions.js might not have loaded.');
+                // Fallback if platform-config is loaded
+                if (typeof PLATFORM_CONFIG !== 'undefined' && PLATFORM_CONFIG.API_BASE) {
+                    window.API_BASE = PLATFORM_CONFIG.API_BASE;
+                    console.log('Using API_BASE from PLATFORM_CONFIG');
+                } else {
+                    alert('Error: Core functions could not be loaded. Please check the console.');
+                    return;
+                }
+            }
+
+            // Inject all section HTML
+            injectSectionHTML();
+
+            // Ensure default nav state
+            showSection('dashboard');
+
+            // Initialize dashboard metrics
+            initializeCharts();
+            loadDashboardData();
+            setInterval(loadDashboardData, 30000); // Refresh every 30 seconds
+        });
+
+        // Inject Section HTML
+        function injectSectionHTML() {
+            const sections = window.SECTIONS || (typeof SECTIONS !== 'undefined' ? SECTIONS : undefined);
+            
+            if (sections) {
+                console.log('Injecting sections...', Object.keys(sections));
+                Object.keys(sections).forEach(sectionName => {
+                    const sectionElement = document.getElementById(`section-${sectionName}`);
+                    if (sectionElement) {
+                        // Replace the entire section element with the template
+                        sectionElement.outerHTML = sections[sectionName];
+                        console.log(`✓ Injected section: ${sectionName}`);
+                    } else {
+                        console.warn(`Section element not found: section-${sectionName}`);
+                    }
+                });
+                console.log('Section injection complete');
+            } else {
+                console.error('SECTIONS object not loaded! Check if control-center-sections.js is loaded.');
+                alert('Error: Control Center sections could not be loaded. Please check the console.');
+            }
+        }
+
+        // Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('open');
+            } else {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            }
+        }
+
+        // Show Section
+        function showSection(sectionName, event) {
+            if (!sectionName) {
+                console.warn('showSection called without sectionName');
+                return;
+            }
+
+            // Update nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to clicked item
+            const sectionNavItem = event?.target?.closest('.nav-item') || document.querySelector(`.nav-item[data-section="${sectionName}"]`);
+            if (sectionNavItem) {
+                sectionNavItem.classList.add('active');
+            }
+
+            // Update page title
+            const titles = {
+                dashboard: { title: 'Dashboard', subtitle: 'Real-time platform overview' },
+                analytics: { title: 'Analytics', subtitle: 'Comprehensive metrics and insights' },
+                translation: { title: 'Multi-language Support', subtitle: 'Translation and language management' },
+                sentiment: { title: 'Sentiment Analysis', subtitle: 'Customer emotion tracking and escalations' },
+                cache: { title: 'Response Caching', subtitle: 'Cache management and optimization' },
+                ratelimit: { title: 'Rate Limiting', subtitle: 'API protection and abuse prevention' },
+                llmTester: { title: 'LLM API Tester', subtitle: 'Run provider health checks and performance probes' },
+                telephonyTester: { title: 'Telephony Tester', subtitle: 'Twilio readiness & voice webhook diagnostics' },
+                knowledge: { title: 'Knowledge Base', subtitle: 'Auto-learning and FAQ management' },
+                faqs: { title: 'FAQ Manager', subtitle: 'Curate reusable answers and keep channels aligned' },
+                conversations: { title: 'Conversations', subtitle: 'Chat history and session management' },
+                voice: { title: 'Voice & Calling', subtitle: 'IVR system and call management' },
+                email: { title: 'Email Support', subtitle: 'Email automation and responses' },
+                integrations: { title: 'Integrations', subtitle: 'CRM, Slack, Teams and external systems' },
+                costs: { title: 'Cost Analysis', subtitle: 'LLM usage and cost tracking' },
+                settings: { title: 'Settings', subtitle: 'Platform configuration' },
+                logs: { title: 'System Logs', subtitle: 'Activity and error logs' }
+            };
+
+            if (titles[sectionName]) {
+                document.getElementById('pageTitle').textContent = titles[sectionName].title;
+                document.getElementById('pageSubtitle').textContent = titles[sectionName].subtitle;
+            }
+
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Show selected section
+            const targetSection = document.getElementById(`section-${sectionName}`);
+            if (targetSection) {
+                targetSection.classList.add('active');
+                
+                // Load section data
+                loadSectionData(sectionName);
+            }
+        }
+
+        // Load Section Data
+        function loadSectionData(sectionName) {
+            const loaders = {
+                analytics: loadAnalyticsSection,
+                translation: loadTranslationSection,
+                sentiment: loadSentimentSection,
+                cache: loadCacheSection,
+                ratelimit: loadRateLimitSection,
+                llmTester: loadLlmTesterSection,
+                telephonyTester: loadTelephonyTesterSection,
+                knowledge: loadKnowledgeSection,
+                faqs: loadFaqSection,
+                conversations: loadConversationsSection,
+                voice: loadVoiceSection,
+                email: loadEmailSection,
+                integrations: loadIntegrationsSection,
+                costs: loadCostsSection,
+                settings: loadSettingsSection,
+                logs: loadLogsSection
+            };
+
+            if (loaders[sectionName] && typeof loaders[sectionName] === 'function') {
+                loaders[sectionName]();
+            }
+        }
+
+        // Initialize Charts
+        function initializeCharts() {
+            // Traffic Chart
+            const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+            charts.traffic = new Chart(trafficCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Interactions',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Sentiment Chart
+            const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+            charts.sentiment = new Chart(sentimentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Neutral', 'Negative', 'Angry', 'Urgent'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            '#10b981',
+                            '#6b7280',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#3b82f6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load Dashboard Data
+        async function loadDashboardData() {
+            try {
+                // Load dashboard overview
+                const response = await fetch(`${API_BASE}/admin/analytics/dashboard?days=7`);
+                const data = await response.json();
+
+                // Update stats
+                document.getElementById('stat-interactions').textContent = data.total_interactions || 0;
+                document.getElementById('stat-cache').textContent = Math.round((data.cache_hit_rate || 0) * 100) + '%';
+                document.getElementById('stat-response').textContent = Math.round(data.avg_response_time_ms || 0) + 'ms';
+                document.getElementById('stat-escalation').textContent = (data.escalation_rate || 0).toFixed(1) + '%';
+
+                // Update sentiment chart
+                if (data.sentiment_distribution) {
+                    const sentimentData = [
+                        data.sentiment_distribution.positive || 0,
+                        data.sentiment_distribution.neutral || 0,
+                        data.sentiment_distribution.negative || 0,
+                        data.sentiment_distribution.angry || 0,
+                        data.sentiment_distribution.urgent || 0
+                    ];
+                    charts.sentiment.data.datasets[0].data = sentimentData;
+                    charts.sentiment.update();
+                }
+
+                // Load daily metrics for traffic chart
+                const metricsResponse = await fetch(`${API_BASE}/admin/analytics/metrics/daily?days=7`);
+                const metricsData = await metricsResponse.json();
+
+                if (metricsData.daily_metrics) {
+                    const labels = metricsData.daily_metrics.map(m => m.date);
+                    const values = metricsData.daily_metrics.map(m => m.interactions);
+                    
+                    charts.traffic.data.labels = labels;
+                    charts.traffic.data.datasets[0].data = values;
+                    charts.traffic.update();
+                }
+
+                // Load language stats
+                const langResponse = await fetch(`${API_BASE}/admin/translation/languages?days=7`);
+                const langData = await langResponse.json();
+                document.getElementById('stat-languages').textContent = langData.total_languages || 0;
+
+                // Load cost savings
+                const costResponse = await fetch(`${API_BASE}/admin/analytics/costs?days=30`);
+                const costData = await costResponse.json();
+                document.getElementById('stat-savings').textContent = '$' + (costData.cache_savings_usd || 0).toFixed(2);
+
+                // Load popular questions
+                loadPopularQuestions();
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Load Popular Questions
+        async function loadPopularQuestions() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/analytics/popular-questions?limit=10`);
+                const data = await response.json();
+
+                const tbody = document.getElementById('popularQuestionsBody');
+                
+                if (data.questions && data.questions.length > 0) {
+                    tbody.innerHTML = data.questions.map((q, index) => `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${q.question}">
+                                ${q.question}
+                            </td>
+                            <td><span class="badge badge-info">${q.count}</span></td>
+                            <td>${(q.avg_confidence || 0).toFixed(3)}</td>
+                            <td>${Math.round(q.avg_response_time_ms || 0)}ms</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">No data available yet</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading popular questions:', error);
+                document.getElementById('popularQuestionsBody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Error loading data</td></tr>';
+            }
+        }
+
+        // Refresh All Data
+        function refreshAllData() {
+            const btn = event.target.closest('button');
+            btn.disabled = true;
+            btn.innerHTML = '<span>🔄</span><span>Refreshing...</span>';
+            
+            const currentSection = document.querySelector('.content-section.active');
+            const sectionId = currentSection ? currentSection.id.replace('section-', '') : 'dashboard';
+            
+            if (sectionId === 'dashboard') {
+                loadDashboardData().finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🔄</span><span>Refresh</span>';
+                });
+            } else {
+                loadSectionData(sectionId);
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🔄</span><span>Refresh</span>';
+                }, 1000);
+            }
+        }
+
+        // Test Chat
+        function testChat() {
+            document.getElementById('testChatModal').classList.add('active');
+            document.getElementById('testChatResponse').style.display = 'none';
+        }
+
+        // Close Modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Send Test Message
+        async function sendTestMessage() {
+            const message = document.getElementById('testMessage')?.value || '';
+            const language = document.getElementById('testLanguage')?.value || '';
+
+            if (!message.trim()) {
+                alert('Please enter a message');
+                return;
+            }
+
+            const responseDiv = document.getElementById('testChatResponse');
+            if (!responseDiv) {
+                console.error('Test chat response container not found');
+                return;
+            }
+            responseDiv.style.display = 'block';
+            responseDiv.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Sending message...</p></div>';
+
+            try {
+                const body = {
+                    message: message,
+                    session_id: 'test-' + Date.now()
+                };
+
+                if (language) {
+                    body.language = language;
+                }
+
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                const answerText = data.answer_text || 'No response text returned.';
+                const provider = data.provider || 'N/A';
+                const responseTime = data.processing_time ? `${Math.round(data.processing_time * 1000)}ms` : 'N/A';
+                const sentiment = data.sentiment?.sentiment || 'N/A';
+                const confidence = data.confidence ?? 'N/A';
+                const detectedLang = language || data.language || 'auto-detected';
+
+                responseDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>Response:</strong>
+                        <p style="margin-top: 10px;">${answerText}</p>
+                    </div>
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 10px;">
+                        <strong>Details:</strong><br>
+                        Provider: ${provider}<br>
+                        Response Time: ${responseTime}<br>
+                        Sentiment: ${sentiment}<br>
+                        Confidence: ${confidence}<br>
+                        Language Detected: ${detectedLang}
+                    </div>
+                `;
+            } catch (error) {
+                responseDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+            }
+        }
+
+        // Export Analytics
+        async function exportAnalytics() {
+            try {
+                const response = await fetch(`${API_BASE}/admin/analytics/export?days=30`);
+                const data = await response.json();
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `analytics-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                alert('Analytics exported successfully!');
+            } catch (error) {
+                alert('Error exporting analytics: ' + error.message);
+            }
+        }
+
+        // Clear Cache
+        async function clearCache() {
+            if (!confirm('Are you sure you want to clear the response cache?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/cache/clear`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                alert('Cache cleared successfully!');
+                loadDashboardData();
+            } catch (error) {
+                alert('Error clearing cache: ' + error.message);
+            }
+        }
+
+        // Refresh Knowledge Base
+        function refreshKnowledgeBase() {
+            alert('Knowledge base refresh initiated. This may take a few minutes.');
+        }
+
+        // Utility: Show Alert (enhanced version in functions file)
+        
+        // Connection Status Checker
+        let connectionCheckInterval = null;
+        
+        async function checkConnection() {
+            const statusBadge = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`, { 
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    statusBadge.className = 'status-badge online';
+                    statusText.textContent = 'System Online';
+                    
+                    // Load data on first successful connection
+                    if (!window.dataLoaded) {
+                        window.dataLoaded = true;
+                        loadDashboardData();
+                    }
+                } else {
+                    statusBadge.className = 'status-badge offline';
+                    statusText.textContent = 'Connection Error';
+                }
+            } catch (error) {
+                statusBadge.className = 'status-badge offline';
+                statusText.textContent = 'Backend Offline';
+            }
+        }
+        
+        // Check connection immediately and then every 5 seconds
+        window.dataLoaded = false;
+        checkConnection();
+        connectionCheckInterval = setInterval(checkConnection, 5000);
+        
+        // Responsive sidebar for mobile
+        if (window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.add('collapsed');
+        }
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('mainContent').classList.add('expanded');
+            } else {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -9,6 +9,6 @@ __pycache__/
 *.db
 .service-pids.json
 .platform-processes.json
-/specstory/
+.specstory/
 data/vector_store/
 data/*.db

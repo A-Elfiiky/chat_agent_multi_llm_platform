@@ -385,6 +385,14 @@ We are constantly evolving! Check out our [FUTURE_ROADMAP.md](docs/FUTURE_ROADMA
 
 ---
 
+## ☁️ Free Cloud Hosting
+
+Want to run this for free? We have a detailed guide on how to deploy this platform using **Oracle Cloud Always Free** tier (4 OCPUs, 24GB RAM) or a **Hybrid Serverless** stack (Hugging Face + Supabase).
+
+� **[Read the Free Cloud Hosting Plan](docs/CLOUD_HOSTING_PLAN.md)**
+
+---
+
 ## �📊 Statistics
 
 - **Total Features:** 8/8 Complete ✅

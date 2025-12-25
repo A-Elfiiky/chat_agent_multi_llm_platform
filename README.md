@@ -374,7 +374,18 @@ Showcases:
 
 ---
 
-## 📊 Statistics
+## � Future Roadmap
+
+We are constantly evolving! Check out our [FUTURE_ROADMAP.md](docs/FUTURE_ROADMAP.md) for our plans to move from MVP to Enterprise Scale, including:
+
+- **Architecture:** Migration to PostgreSQL & Vector Databases (Qdrant/Weaviate).
+- **Observability:** OpenTelemetry tracing & ELK stack logging.
+- **AI:** LLM-as-a-Judge evaluation & Semantic Caching.
+- **Security:** OAuth2 Admin Auth & Secrets Management.
+
+---
+
+## �📊 Statistics
 
 - **Total Features:** 8/8 Complete ✅
 - **API Endpoints:** 40+

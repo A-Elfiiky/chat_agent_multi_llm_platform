@@ -413,8 +413,8 @@ This is a complete, production-ready platform. All 8 planned features have been 
 
 ## 📄 License
 
-This project is licensed under the **GNU General Public License v3.0**.
+This project is licensed under the **MIT License**.
 
-You are free to copy, distribute, and modify the software as long as you track changes/dates in source files. Any modifications to or software including (via compiler) GPL-licensed code must also be made available under the GPL along with build & install instructions.
+You are free to use, modify, and distribute this software for any purpose, including commercial applications, as long as the original copyright notice is included.
 
 See the [LICENSE](LICENSE) file for details.
